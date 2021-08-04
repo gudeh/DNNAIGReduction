@@ -14,7 +14,7 @@ SHELL      := /bin/sh
 CXX        ?= g++
 CXX        := $(CCACHE_BIN) $(CXX)
 CXXFLAGS   := $(THIRDFLAGS) \
-							-fPIC -std=c++20 -O3 -fopenmp -Wall -fvisibility=hidden -Wfatal-errors \
+							-fPIC -std=c++17 -O3 -fopenmp -Wall -fvisibility=hidden -Wfatal-errors \
 							-fdiagnostics-color=always -Wno-unused-command-line-argument
 
 SRC        := AIG.cpp aigraph.cpp AND.cpp binaryDS.cpp input.cpp latch.cpp main.cpp nodeAig.cpp \

@@ -4,7 +4,6 @@
  * and open the template in the editor.
  */
 
-#include <bit>
 #include "AIG.h"
 
 
@@ -192,16 +191,16 @@ unsigned long long int AND::PropagSignalDFS(int mask_size){
             sig_rhs1 &= mask;
         }
 
-        int64_t zero_zero = std::popcount((~sig_rhs0) & (~sig_rhs1));
+        int64_t zero_zero = __builtin_popcountll((~sig_rhs0) & (~sig_rhs1));
 
         if (mask_size < BITS_PACKAGE_SIZE) {
             zero_zero -= mask_size;
         }
 
         this->input_combinations[0] += zero_zero;
-        this->input_combinations[1] += std::popcount((~sig_rhs0) & sig_rhs1);
-        this->input_combinations[2] += std::popcount(sig_rhs0 & (~sig_rhs1));
-        this->input_combinations[3] += std::popcount(this->bit_vector);
+        this->input_combinations[1] += __builtin_popcountll((~sig_rhs0) & sig_rhs1);
+        this->input_combinations[2] += __builtin_popcountll(sig_rhs0 & (~sig_rhs1));
+        this->input_combinations[3] += __builtin_popcountll(this->bit_vector);
 
 //        bit_vector=(((inputs[0]->fixLSB()->runDFS())^(this->getInputPolarities()[0]*ULLONG_MAX))&((inputs[1]->fixLSB()->runDFS())^(this->getInputPolarities()[1]*ULLONG_MAX)));
 
