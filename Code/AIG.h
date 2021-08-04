@@ -77,8 +77,8 @@ extern int posX_max;
 
 //#include <filesystem> //requires c++17
 //namespace fs = std::filesystem;
-#include <filesystem> //requires c++17
-namespace fs = std::filesystem;
+#include <experimental/filesystem> //requires c++17
+namespace fs = std::experimental::filesystem;
 
 //#include "include/alice/alice.hpp"
 using namespace std;
