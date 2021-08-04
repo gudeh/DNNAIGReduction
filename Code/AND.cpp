@@ -4,6 +4,7 @@
  * and open the template in the editor.
  */
 
+#include <bit>
 #include "AIG.h"
 
 
@@ -16,7 +17,7 @@ vector<nodeAig*> AND::getInputs(){
     ret[0]=this->inputs[0]->fixLSB();
     ret[1]=this->inputs[1]->fixLSB();
     return ret;
-} 
+}
 
 
 
@@ -32,7 +33,7 @@ void AND::pushInput(nodeAig* param, bool param_polarity){
 //            cout<<(param)<<"AAAAAAAA:"<<param->getId()<<"|";
             param=((nodeAig*)(((uintptr_t)param) ^ 01));
 //            cout<<(param)<<endl;
-            
+
         }
         if(inputs.size()>0)
         {
@@ -55,7 +56,7 @@ void AND::pushInput(nodeAig* param, bool param_polarity){
 
 int AND::computeDepthInToOut(){
 //    int depth;
-    
+
 //    cout<<"visiting AND:"<<this->id<<endl;
     if(this->signal==-1)
     {
@@ -65,8 +66,8 @@ int AND::computeDepthInToOut(){
 
         depth1=this->getInputs()[0]->fixLSB()->computeDepthInToOut();
         depth2=this->getInputs()[1]->fixLSB()->computeDepthInToOut();
-        int v;         
-        unsigned int r;  
+        int v;
+        unsigned int r;
         v=depth1-depth2;
         int const mask = v >> sizeof(int) * CHAR_BIT - 1;
 
@@ -74,9 +75,9 @@ int AND::computeDepthInToOut(){
         signal=(((depth1+depth2)+r)/2) +1 ;
         return signal;
     }
-    else 
+    else
         return signal;
-    
+
 }
 
 
@@ -89,7 +90,7 @@ int AND::computeDepthInToOut(){
 //            this->getInputs()[0]->computeDepthOutToIn(this->signal);
 //        if(this->getInputs()[1]->getSignal() > signal+1 || this->getInputs()[1]->getSignal() ==-1)
 //            this->getInputs()[1]->computeDepthOutToIn(this->signal);
-//    }    
+//    }
 //}
 
 
@@ -117,12 +118,12 @@ void AND::writeNode(ofstream& write){
 //    ofstream write;
 //    write.open("log.txt",ios::app);
 //    vector<bool> polarities;
-    
+
     write<<"AND: "<<this->id<<" .Inputs("<<this->getInputs().size()<<"):";
-    
+
     write<<this->getInputs()[0]->getId()+this->getInputPolarities()[0];
     write<<",";
-    
+
     write<<this->getInputs()[1]->getId()+this->getInputPolarities()[1];
 #if IGNORE_OUTPUTS ==0
     write<<" Outputs: ";
@@ -160,19 +161,19 @@ void AND::printNode(){
     for(int a=0;a<this->outputs.size();a++)
         cout<<outputs[a]->fixLSB()->getId()+(int)getThisPtrPolarity(outputs[a])<<",";
 #endif
-    
+
     cout<<endl;
 }
 
-unsigned long long int AND::PropagSignalDFS(){
+unsigned long long int AND::PropagSignalDFS(int mask_size){
     unsigned long long int sig_rhs0,sig_rhs1;
     switch (this->signal){
         case -1:
-        sig_rhs0=inputs[0]->fixLSB()->PropagSignalDFS();
-        sig_rhs1=inputs[1]->fixLSB()->PropagSignalDFS();
+        sig_rhs0=inputs[0]->fixLSB()->PropagSignalDFS(mask_size);
+        sig_rhs1=inputs[1]->fixLSB()->PropagSignalDFS(mask_size);
 #if DEBUG >= 3
         ofstream dump("dumpDFS.csv",ios::app);
-        dump<<this->id<<"-->";    
+        dump<<this->id<<"-->";
         dump<<getInputs()[0]->getId()<<":"<<sig_rhs0<<",pol0:"<<(getInputPolarities()[0])<<","<<getInputs()[1]->getId()<<":"<<sig_rhs1<<",pol1:"<<(getInputPolarities()[1]);
         dump<<",pol0*U:"<<(getInputPolarities()[0]*ULLONG_MAX)<<",pol1*U:"<<(getInputPolarities()[1]*ULLONG_MAX);
         dump<<", XOR0:"<<(sig_rhs0^(getInputPolarities()[0]*ULLONG_MAX))<<", XOR1:"<<(sig_rhs1^(getInputPolarities()[1]*ULLONG_MAX));
@@ -182,8 +183,25 @@ unsigned long long int AND::PropagSignalDFS(){
             sig_rhs0=~sig_rhs0;
         if(getInputPolarities()[1])
             sig_rhs1=~sig_rhs1;
-        
+
         this->bit_vector= sig_rhs0 & sig_rhs1;
+
+        if (mask_size < BITS_PACKAGE_SIZE) {
+            uint64_t const mask = (uint64_t(1) << mask_size) - 1;
+            sig_rhs0 &= mask;
+            sig_rhs1 &= mask;
+        }
+
+        int64_t zero_zero = std::popcount((~sig_rhs0) & (~sig_rhs1));
+
+        if (mask_size < BITS_PACKAGE_SIZE) {
+            zero_zero -= mask_size;
+        }
+
+        this->input_combinations[0] += zero_zero;
+        this->input_combinations[1] += std::popcount((~sig_rhs0) & sig_rhs1);
+        this->input_combinations[2] += std::popcount(sig_rhs0 & (~sig_rhs1));
+        this->input_combinations[3] += std::popcount(this->bit_vector);
 
 //        bit_vector=(((inputs[0]->fixLSB()->runDFS())^(this->getInputPolarities()[0]*ULLONG_MAX))&((inputs[1]->fixLSB()->runDFS())^(this->getInputPolarities()[1]*ULLONG_MAX)));
 
@@ -262,7 +280,7 @@ void AND::removeOutput(unsigned int id_to_remove) {
 //            break;
 //        }
 //    }
-//    
+//
 //    if(outputs.size()==0)
 //    {
 //        this->inputs[0]->fixLSB()->recursiveRemoveOutput(this->id);
@@ -290,5 +308,5 @@ void AND::invertInputs() {
                     inputs[1]=aux;
             }
 	}
-	
+
 }

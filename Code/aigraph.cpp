@@ -4,13 +4,13 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   circuit.cpp
  * Author: augusto
- * 
+ *
  * Created on 23 de Março de 2018, 16:59
  */
- 
+
 #include <bits/c++config.h>
 
 #include "AIG.h"
@@ -23,7 +23,7 @@ aigraph::aigraph(){
     this->constant0.setSignal(0);
     this->constant0.setBitVector(0);
 }
-    
+
 //graph::graph(float th){
 //    this->threshold=th;
 //}
@@ -71,7 +71,7 @@ AND* aigraph::pushAnd(unsigned int index, AND AND_obj){
 input* aigraph::findInput(unsigned int param){
     if(all_inputs.find(param)!=all_inputs.end())
         return &all_inputs.find(param)->second;
-    else 
+    else
         return nullptr;
 }
 
@@ -101,12 +101,12 @@ nodeAig* aigraph::findAny(unsigned int param){
 }
 
 void aigraph::readAAG(ifstream& file, string name){
-    
+
     string line;
     string type;
     unsigned int M,I,L,O,A;
     unsigned int i,lhs,rhs0,rhs1;
-    
+
     if(name.find("/"))
         name.erase(0,name.find_last_of('/')+1);
     if(name.find("."))
@@ -131,9 +131,9 @@ void aigraph::readAAG(ifstream& file, string name){
         this->pushPI(stoi(line),input_obj);
 #if DEBUG >= 4
         cout<<"pushing input "<<stoi(line)<<endl;
-#endif  
+#endif
     }
-    
+
   //////////////////LATCHS//////////////////////
     map<unsigned int, aux_struct>  record;
     map<unsigned int, bool> record_PO;
@@ -148,8 +148,8 @@ void aigraph::readAAG(ifstream& file, string name){
         this->pushPI(lhs,latch_obj);
 #if DEBUG >= 4
         cout<<"pushing latch (as input) "<<stoi(line)<<endl;
-#endif  
-        
+#endif
+
         //solving first input's polarity
         rhs0=stoi(wordSelector(line,2));
         if(rhs0%2!=0)
@@ -159,10 +159,10 @@ void aigraph::readAAG(ifstream& file, string name){
         }
         else
             polarity0=false;
-        
+
         output output_obj(rhs0);
         record_PO.insert(pair<unsigned int,bool>(rhs0,polarity0));
-    
+
    if(record.find(lhs)!=record.end())//if the latch is on the record
         {
             //it is an input somewhere else, needs to be solved
@@ -172,21 +172,21 @@ void aigraph::readAAG(ifstream& file, string name){
                 record.find(lhs)->second.outputs[a]->pushInput(findInput(lhs),lhs_polarity);
             }
         }
-        
+
         //the latch input will become a circuit output
 //        output_obj.setPolarity(polarity0);
         this->pushPO(rhs0,output_obj);
-            
-            
+
+
         //the latch output will become a circuit input
         this->pushPI(lhs,latch_obj);
     }
    //////////////////OUTPUTS///////////////////
-    
+
     for(i=0;i<O;i++){
         getline(file,line);
         lhs=stoi(wordSelector(line,1));
-        
+
         if(lhs % 2 != 0)
         {
             lhs=lhs-1;
@@ -194,14 +194,14 @@ void aigraph::readAAG(ifstream& file, string name){
         }
         else
             polarity0=false;
-        
+
         record_PO.insert(pair<unsigned int,bool>(lhs,polarity0));
-        
+
         output output_obj(lhs);
         this->pushPO(lhs,output_obj);
 #if DEBUG >= 4
         cout<<"pushing output "<<stoi(line)<<endl;
-#endif  
+#endif
     }
    ///////////////////ANDS////////////////
     for(i=0;i<A;i++){
@@ -212,8 +212,8 @@ void aigraph::readAAG(ifstream& file, string name){
 
 #if DEBUG >= 4
         cout<<"pushing AND "<<this->findAnd(lhs)->getId()<<endl;
-#endif  
-        
+#endif
+
         //solving inputs' polarity
         rhs0=stoi(wordSelector(line,2));
         if(rhs0%2!=0)
@@ -223,7 +223,7 @@ void aigraph::readAAG(ifstream& file, string name){
         }
         else
             polarity0=false;
-        
+
         rhs1=stoi(wordSelector(line,3));
         if(rhs1%2!=0)
         {
@@ -232,12 +232,12 @@ void aigraph::readAAG(ifstream& file, string name){
         }
         else
             polarity1=false;
-        
+
 #if DEBUG >= 3
         cout<<"rhs0:"<<rhs0<<endl;
         cout<<"rhs1:"<<rhs1<<endl;
 #endif
-        
+
         if(record.find(lhs)!=record.end())//if the AND is on the record
         {
             //it is an input somewhere else, needs to be solved
@@ -271,7 +271,7 @@ void aigraph::readAAG(ifstream& file, string name){
             {
                 record.find(rhs0)->second.outputs.push_back(this->findAnd(lhs));
                 record.find(rhs0)->second.firsts_polarity.push_back(polarity0);
-                
+
             }
         }
         //the same for the second input
@@ -285,7 +285,7 @@ void aigraph::readAAG(ifstream& file, string name){
         else //if the input(rhs1) was not declared yet
         {
             //save it on the record and add lhs to it's outputs
-            if(record.find(rhs1)==record.end()) 
+            if(record.find(rhs1)==record.end())
             {
                 aux_record.outputs.clear();
                 aux_record.firsts_polarity.clear();
@@ -305,7 +305,7 @@ void aigraph::readAAG(ifstream& file, string name){
 
     }
     file.close();
-    
+
     map<unsigned int, output>::iterator it_out;
     for(it_out=this->all_outputs.begin();it_out!=all_outputs.end();it_out++)
     {
@@ -320,28 +320,28 @@ void aigraph::printCircuit() {
     map<unsigned int, input>::iterator it_in;
     map<unsigned int, output>::iterator it_out;
     map<unsigned int, latch>::iterator it_latch;
-    
+
     cout<<"Inputs: ";
     for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
         cout<<it_in->second.getId()<<",";
     cout<<endl;
-    
+
     cout<<"Latches: ";
     for(it_latch=all_latches.begin();it_latch!=all_latches.end();it_latch++)
         cout<<it_latch->second.getId()<<",";
     cout<<endl;
-    
+
     cout<<"Outputs: ";
     for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
         cout<<it_out->second.getId()+((int)it_out->second.getInputPolarity())<<",";
     cout<<endl;
-    
+
     cout<<"ANDs: ";
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
     {
         if(it_and->second.getInputs().size()==2)
             cout<<it_and->second.getId()<<"("<<it_and->second.getInputs()[0]->getId()+((int)it_and->second.getInputPolarities()[0])<<","<<it_and->second.getInputs()[1]->getId()+((int)it_and->second.getInputPolarities()[1])<<"),";
- 
+
         else
         {
             cout<<"ERROR, unexpected size of AND "<<it_and->first<<":"<<it_and->second.getInputs().size()<<endl;
@@ -395,7 +395,7 @@ void aigraph::writeCircuitDebug(){
     ofstream write;
     write.open("Circuit debug.txt",ios::trunc);
         write<<"Circuit name: "<<this->name<<endl;
-    
+
     map<unsigned int, AND>::iterator it_and;
     map<unsigned int, input>::iterator it_in;
     map<unsigned int, output>::iterator it_out;
@@ -409,7 +409,7 @@ void aigraph::writeCircuitDebug(){
 
     for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
         it_out->second.writeNode(write);
-    
+
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         it_and->second.writeNode(write);
 }
@@ -420,7 +420,7 @@ void aigraph::writeAAG(){
     M=all_inputs.size()+all_latches.size()+all_ANDS.size();
     write.open((name+".aag").c_str(),ios::out|ios::trunc);
     write<<"aag "<<M<<" "<<all_inputs.size()<<" "<<all_latches.size()<<" "<<all_outputs.size()<<" "<<all_ANDS.size()<<endl;
-    
+
     //write the circuit inputs
     for(map<unsigned int,input>::iterator it1=all_inputs.begin();it1!=all_inputs.end();it1++)
         write<<it1->second.getId()<<endl;
@@ -428,7 +428,7 @@ void aigraph::writeAAG(){
     //write outputs
     for(map<unsigned int,output>::iterator it2=all_outputs.begin();it2!=all_outputs.end();it2++)
         write<<it2->second.getId()+((int)it2->second.getInputPolarity())<<endl;
-    
+
     //write ANDs
     for(map<unsigned int,AND>::iterator it3=all_ANDS.begin();it3!=all_ANDS.end();it3++)
     {
@@ -455,7 +455,7 @@ void aigraph::writeAIG(){
 //    for(map<unsigned int,input>::iterator it1=all_inputs.begin();it1!=all_inputs.end();it1++)
 //        write<<it1->second.getId()<<endl;
 //#endif
-    
+
     for(map<unsigned int,output>::iterator it2=all_outputs.begin();it2!=all_outputs.end();it2++)
         write<<it2->second.getId()+((int)it2->second.getInputPolarity())<<endl;
 
@@ -532,7 +532,7 @@ void aigraph::encodeToFile(ofstream& file, unsigned x){
 }
 
 unsigned char aigraph::getnoneofch (ifstream& file,int index){
-		
+
         int ch;
         char c;
         file.get(c);
@@ -567,7 +567,7 @@ void aigraph::readAIG(ifstream& file, string param_name){
     #if DEBUG >= 3
     ofstream debs("dumps/debug");
     #endif
-    
+
     if(param_name.find("/"))
         param_name.erase(0,param_name.find_last_of('/')+1);
     if(param_name.find("."))
@@ -590,7 +590,7 @@ void aigraph::readAIG(ifstream& file, string param_name){
     #if COUT>=1
     cout<<"MILOA:"<<M<<","<<I<<","<<L<<","<<O<<","<<A<<endl;
     #endif
-    
+
     for(int ii=0;ii<O;ii++)
         getline(file,line);
     #if COUT>=1
@@ -617,12 +617,12 @@ void aigraph::readAIG(ifstream& file, string param_name){
         and_index++;
         AND AND_obj(and_index*2);
         AND_ptr=this->pushAnd(and_index*2,AND_obj);
-        
+
         delta1=decode(file,and_index*2);
         rhs0=and_index*2-delta1;
         delta2=decode(file,and_index*2);
         rhs1=rhs0-delta2;
-        
+
 //         cout<<"AND:"<<and_index*2<<". ";
 //         cout<<"delta1:"<<delta1<<" delta2:"<<delta2<<". ";
 //         cout<<"rhs0:"<<rhs0<<" rhs1:"<<rhs1<<endl;
@@ -668,12 +668,12 @@ void aigraph::readAIG(ifstream& file, string param_name){
 //            else
 //                AND_ptr->pushInput(&constant1,false);
 //        }
-        
-        
+
+
 //        this->findAny(rhs1)->printNode();
 //        this->findAny(and_index*2)->printNode();
 //        cout<<"delta:"<<delta1<<","<<delta2<<" and:"<<and_index*2<<","<<rhs0<<","<<rhs1<<"\t";
-        
+
 #if IGNORE_OUTPUTS == 0
 //        cout<<"rhs1:"<<rhs1<<" ";
 //        this->findAny(rhs1)->printNode();
@@ -682,7 +682,7 @@ void aigraph::readAIG(ifstream& file, string param_name){
     if(rhs0>1)
        this->findAny(rhs0)->pushOutput(AND_ptr);
     if(rhs1>1)
-       this->findAny(rhs1)->pushOutput(AND_ptr); 
+       this->findAny(rhs1)->pushOutput(AND_ptr);
 //        cout<<"rhs1:"<<rhs1<<" ";
 //        this->findAny(rhs1)->printNode();
 //            cout<<"rhs0:"<<rhs0<<" ";
@@ -699,10 +699,10 @@ void aigraph::readAIG(ifstream& file, string param_name){
     //jumping the header, right to outputs list
     file.seekg(file.beg);
     getline(file,line);
-    
+
     for(int f=0;f<O;f++){
         getline(file,line);
-       lhs=stoi(wordSelector(line,1));      
+       lhs=stoi(wordSelector(line,1));
 //        lhs=decode(file);
 //        cout<<line<<endl;
        if(lhs>1)
@@ -731,7 +731,7 @@ void aigraph::readAIG(ifstream& file, string param_name){
         this->pushPO(lhs,output_obj);
 #if DEBUG >= 3
         cout<<"pushing output "<<lhs<<" Polarity:"<<polarity0<<endl;
-#endif  
+#endif
     }
 //    cout<<this->all_inputs.size()<<endl;
 //    this->printCircuit();
@@ -753,7 +753,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 
     string program_output_name;
     program_output_name="Scores_";
-    
+
     if(mnist_obj.getAllBits().size()==60000 && this->name.find("train")==string::npos)
         this->name+="_train";
     else if (mnist_obj.getAllBits().size()==10000 && this->name.find("test")==string::npos)
@@ -794,7 +794,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
         ifstream in_file("removed_inputs.txt");
         while(getline(in_file,line))
             removed_inputs.insert(stoi(line));
-    
+
 //        cout<<"Removed inputs size:"<<removed_inputs.size()<<endl;
         it_in=all_inputs.begin();
         bitset<BITS_PACKAGE_SIZE> bits;
@@ -828,7 +828,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 #if DEBUG >= 1
                 dump_app<<it_in->second.getId()<<"="<<((((posY)*(posX_max)) +posX+1)*2)<<endl;
 #endif
-                
+
                 it_in++;
             }
 #if DEBUG >= 1
@@ -845,7 +845,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
                             posY=0;
             }
        }
-#else 
+#else
         cout<<"RJAEIRJEOI"<<endl;
         bitset<BITS_PACKAGE_SIZE> bits;
         for(int u=offset;u<offset+BITS_PACKAGE_SIZE;u++)
@@ -900,7 +900,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 ////                       check_bits<<"end of image"<<endl;
 //                   }
 //               }
-//            
+//
 ////            check_bits<<it_in->second.getId()<<":"<<bits<<endl;
 //            it_in->second.setBitVector(bits.to_ullong());
 //            //check_bits<<"raw:"<<bits.to_ullong()<<endl;
@@ -913,23 +913,25 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
             it_and->second.setSignal(-1);
         for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
             it_out->second.setSignal(-1);
-        
-        struct rusage buf; 
+
+        struct rusage buf;
         int start,stop;
 //        if(getrusage(RUSAGE_SELF,&buf)==-1)
 //            cout<<"GETRUSAGE FAILURE!"<<endl;
 //        start=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
 //
 //        cout<<"DFS START"<<endl;
+        int8_t const mask_size = std::min<int>(BITS_PACKAGE_SIZE, num_imgs - offset);
+
         for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
         {
             if(it_out->second.getId()>1)
-                it_out->second.PropagSignalDFS();
+                it_out->second.PropagSignalDFS(mask_size);
         }
 //        if(getrusage(RUSAGE_SELF,&buf)==-1)
 //            cout<<"GETRUSAGE FAILURE!"<<endl;
 //        stop=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
-//        
+//
 //        cout<<"Time to DFS:"<<stop-start<<endl;
 
        int aux=0;
@@ -938,7 +940,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
        vector<int> aux_vec;
        vector<vector<int> > images_bits(64);
        map<nodeAig*,int>::iterator iter;
-       
+
        unsigned long long int mask=1;
        //inverting outputs depending on node's polarity
         for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
@@ -952,7 +954,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
                 it_out->second.setBitVector(ULLONG_MAX);
             else if (it_out->second.getId()==0)
                 it_out->second.setBitVector(0);
-        }       
+        }
 #if DEBUG >=1
         {
 //            dump_app<<"image index:"<<img_count+1<<". Label:"<<mnist_obj.getLabel(img_count)<<endl;
@@ -975,7 +977,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
             for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
                 dump_app<<it_and->first<<":"<<it_and->second.getBitVector()<<"|";
             dump_app<<endl;
-            
+
             dump_app<<"-----------------------------------------------------"<<endl<<endl;
         }
 #endif
@@ -986,7 +988,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
            cout<<"output:"<<it_out->second.getId()+it_out->second.getInputPolarity()<<"->"<<x<<endl;
        }
 #endif
-       
+
        images_bits.clear();
        //Separating the outputs in to groups of 16 bits
        int b=0;
@@ -1010,7 +1012,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 #if DEBUG >= 2
             cout<<endl;
 #endif
-            
+
             b++;
        }
 //    cout<<"images_bits size:"<<images_bits.size()<<endl;
@@ -1023,8 +1025,8 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 //            dump_bits<<images_bits[a][b];
 //        dump_bits<<endl;
 //    }
-    
-    
+
+
         for(int u=0;u<BITS_PACKAGE_SIZE;u++)
         {
             img_count=offset+u;
@@ -1033,7 +1035,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
                 img_count--;
                 break;
             }
-                
+
             PO_signals.clear();
             if(all_outputs.size()==160)
             {
@@ -1044,7 +1046,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
                     {
                         PO_signals.push_back(aux_vec);
                         aux_vec.clear();
-                    } 
+                    }
                 }
             }
             else if (all_outputs.size()==10)
@@ -1086,13 +1088,13 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 
                //from binary to decimal
                for(int w=0;w<PO_signals.size();w++)
-               {        
+               {
 //                   if(PO_signals[w][0]!=1 && PO_signals[w][0]!=0);
 //                       cout<<"ERROR, unexpected signal value in apply_image:"<<PO_signals[w][0]<<endl;
                    int soma=0;
                    if(all_outputs.size()==160)
                         soma=binToDec(PO_signals[w]);
-                   
+
                    else if(all_outputs.size()==10)
                    {
                        if(PO_signals[w].size()>1)
@@ -1114,7 +1116,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 //               map<int,vector<int> > img_scores;
 //               img_scores.insert(pair<int,vector<int> >(img_count,aux_vec));
 
-               
+
 //               for(int k=0;k<img_scores.rbegin()->second.size();k++)
 //               {
 //                   if(highest_score<img_scores.rbegin()->second[k])
@@ -1135,7 +1137,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
                 //checking if current image is correct
 
                int highest_score=-32768;
-               
+
                int highest_index=0;
                for(int k=0;k<aux_vec.size();k++)
                {
@@ -1153,7 +1155,7 @@ void aigraph::applyMnistRecursive(binaryDS& mnist_obj){
 //                   cout<<"Highest score number on image "<<img_count+1<<" is negative or 0:"<<highest_score<<endl;
 //                   vamo<<"WRONG ANSWER!"<<endl;
 //               }
-//               else 
+//               else
                if(highest_index==mnist_obj.getLabel(img_count))
                {
                    correct_answers++;
@@ -1217,7 +1219,7 @@ void aigraph::propagateAndDeletePIBased(binaryDS& mnist_obj,float th,int LEAVE_C
     constant1.setId(1);
     constant0.setSignal(0);
     constant0.setId(0);
-    
+
 
 #if WRITE_ORIGINAL_DEPTHS == 1
     this->setDepthsInToOut();
@@ -1230,12 +1232,12 @@ void aigraph::propagateAndDeletePIBased(binaryDS& mnist_obj,float th,int LEAVE_C
     for(int v=0;v<all_depths.size();v++)
         nodes_in_level[all_depths[v]]++;
     nodes_in_level[0]--;
-    
+
     ofstream original_nodes_level("original_nodes_level");
     for(int v=0;v<nodes_in_level.size();v++)
         original_nodes_level<<v<<","<<nodes_in_level[v]<<endl;
 #endif
-    
+
     for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
         it_in->second.setSignal(2);
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
@@ -1259,7 +1261,7 @@ void aigraph::propagateAndDeletePIBased(binaryDS& mnist_obj,float th,int LEAVE_C
             it_in->second.clearOutputs();
 #endif
             PI_constant++;
-      }   
+      }
       posX++;
       if(posX==posX_max)
       {
@@ -1275,14 +1277,14 @@ void aigraph::propagateAndDeletePIBased(binaryDS& mnist_obj,float th,int LEAVE_C
   this->PIs_constant=PI_constant;
 //  simpl_info<<"Threshold:"<<to_string(1-threshold);
 //  simpl_info<<"# of PI that pass threshold:"<<PI_constant<<endl;
-  
 
-    
+
+
 #if TEST == 1
 //  int conts=0;
 //  for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
 //      it_in->second.setSignal(2);
-//  
+//
 //  for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++,conts++)
 //  {
 //      if(conts<10)
@@ -1292,16 +1294,16 @@ void aigraph::propagateAndDeletePIBased(binaryDS& mnist_obj,float th,int LEAVE_C
 //  all_inputs.find(4)->second.setSignal(0);
 //  all_inputs.find(6)->second.setSignal(2);
 #endif
-    
+
 //  int 3=2;
-    
+
     vector<nodeAig*> stack;
     vector<nodeAig*> AUX;
     nodeAig* current;
 //    cout<<"POs size:"<<all_outputs.size()<<endl<<endl;
     bool polarity,pol_new_node;
     nodeAig* new_node;
-    
+
 if(LEAVE_CONSTANTS == 0)
 {
     //DFS to propagate constants
@@ -1317,13 +1319,13 @@ if(LEAVE_CONSTANTS == 0)
         //-1 means not visited
         //2 means not a constant
         while(!stack.empty())
-        {            
+        {
             current=stack.back();
             if(current->getInputs()[0]->getSignal()==-1)
                 stack.push_back(current->getInputs()[0]);
             else if(current->getInputs()[1]->getSignal()==-1)
                 stack.push_back(current->getInputs()[1]);
-            
+
             else if(current->getInputs()[0]->getSignal()>-1 && current->getInputs()[1]->getSignal()>-1)
             {
                 int first=0,second=0;
@@ -1331,7 +1333,7 @@ if(LEAVE_CONSTANTS == 0)
                     first=2;
                 else
                     first=((int)current->getInputs()[0]->getSignal())^((int)current->getInputPolarities()[0]);
-                
+
                 if(current->getInputs()[1]->getSignal()==2)
                     second=2;
                 else
@@ -1435,7 +1437,7 @@ if(LEAVE_CONSTANTS == 0)
                     //treating if current to be removed is a PO
                     if(all_outputs.find(current->getId())!=all_outputs.end())
                     {
-#if DEBUG >= 3                       
+#if DEBUG >= 3
                         dump1<<"Renumbering output:"<<current->getId()<<" with:"<<new_node->getId()<<endl;
 #endif
                         all_outputs.find(current->getId())->second.setId(new_node->getId());
@@ -1461,7 +1463,7 @@ if(LEAVE_CONSTANTS == 0)
     dump2<<"Inputs signals:";
     for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
         dump2<<it_in->second.getId()<<":"<<it_in->second.getSignal()<<"|";
-    
+
     dump2<<endl<<endl<<"Outputs Signals:";
     for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
     {
@@ -1470,15 +1472,15 @@ if(LEAVE_CONSTANTS == 0)
             dump2<<"!";
         dump2<<"|";
     }
-    
+
     dump2<<endl<<endl<<"ANDs Signals:";
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         dump2<<it_and->second.getId()<<":"<<it_and->second.getSignal()<<"|";
-#endif 
+#endif
     //making sure outputs wont be deleted, by adding themselfs to their fanout list
     for(it_out=this->all_outputs.begin();it_out!=all_outputs.end();it_out++)
         it_out->second.getInput()->pushOutput(it_out->second.getInput());
-    
+
     //Removing ANDs with 0 fanouts
     int ands_removed_aux=0,PIs_removed_aux=0,id=0;
     vector<int> removed_nodes_counter_by_depth(graph_depth+1,0);
@@ -1495,7 +1497,7 @@ if(LEAVE_CONSTANTS == 0)
         else
             it_and++;
     }
-    
+
     ofstream write("removed_inputs.txt");
     it_in=all_inputs.begin();
     //COUNTING inputs with 0 fanouts
@@ -1534,7 +1536,7 @@ if(LEAVE_CONSTANTS == 0)
         this->name+="_test_old";
     else
         cout<<"mnist size unknown"<<endl;
-    
+
 #if DEBUG >= 1
     int sum=0;
     for(int t=0;t<removed_nodes_counter_by_depth.size();t++)
@@ -1549,9 +1551,9 @@ if(LEAVE_CONSTANTS == 0)
     nodes_per_level<<endl;
     nodes_per_level.close();
 #endif
-    
+
     this->setDepthsInToOut();
-    
+
     ofstream csv_final;
     csv_final.open("todos_scores.csv",ios::app);
 //    simpl_info<<endl<<to_string(1-threshold)<<","<<PI_constant<<","<<PIs_removed<<","<<ands_removed<<","<<all_ANDS.size()<<endl;
@@ -1560,7 +1562,7 @@ if(LEAVE_CONSTANTS == 0)
     csv_final<<endl;
 #endif
 csv_final.close();
-    
+
     //Renumbering PIs
 #if DEBUG >= 3
     dump3<<"ANDs removed:"<<ands_removed_aux<<endl;
@@ -1577,7 +1579,7 @@ csv_final.close();
 #endif
        it_in->second.setId(id*2);
    }
-    
+
    //Renumbering ANDs
 #if DEBUG >= 3
    dump3<<endl<<endl<<"Renumbering ANDS:"<<endl;
@@ -1601,8 +1603,8 @@ csv_final.close();
 #endif
         it_out->second.setId(it_out->second.getInput()->getId());
    }
-}  
-   
+}
+
     //Reordering AND's inputs (bigger first)
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         it_and->second.invertInputs();
@@ -1621,26 +1623,26 @@ void aigraph::cutAIG(){
     map<unsigned int, input>::iterator it_in;
     map<unsigned int, output>::iterator it_out;
     map<unsigned int, AND>::iterator it_and;
-    
+
     aigraph AIG_cut;
     vector<nodeAig*> stack;
     nodeAig* current;
     input* aux_PI;
     AND* aux_AND;
-    
-    
+
+
     //Initializing node's for DFS, -1 means not visited
     for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
         it_in->second.setSignal(0);
-    
+
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         it_and->second.setSignal(-1);
 
     for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
         it_out->second.setSignal(-1);
-    
-    
-    
+
+
+
 //    for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
     it_out=all_outputs.begin();
     {
@@ -1649,7 +1651,7 @@ void aigraph::cutAIG(){
         it_out->second.setSignal(1);
         stack.clear();
         stack.push_back(it_out->second.getInput());
-        
+
         //DFS to cut the AIG based on primary output
         while(!stack.empty())
         {
@@ -1662,7 +1664,7 @@ void aigraph::cutAIG(){
             {
                 AND and_obj(current->getId());
                 aux_AND=AIG_cut.pushAnd(current->getId(),and_obj);
-                
+
                 if(current->getInputs()[0]->getSignal()==0)
                 {
                     if(AIG_cut.findInput(current->getInputs()[0]->getId())==nullptr)
@@ -1676,7 +1678,7 @@ void aigraph::cutAIG(){
                 }
                 else
                     aux_AND->pushInput(AIG_cut.findAnd(current->getInputs()[0]->getId()),current->getInputPolarities()[0]);
-                
+
                 if(current->getInputs()[1]->getSignal()==0)
                 {
                     if(AIG_cut.findInput(current->getInputs()[1]->getId())==nullptr)
@@ -1690,7 +1692,7 @@ void aigraph::cutAIG(){
                 }
                 else
                     aux_AND->pushInput(AIG_cut.findAnd(current->getInputs()[1]->getId()),current->getInputPolarities()[0]);
-                
+
                 current->setSignal(1);
                 stack.pop_back();
             }
@@ -1704,12 +1706,12 @@ void aigraph::setANDsProbabilities(binaryDS& mnist_obj){
     map<unsigned int,AND>::iterator it_and;
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         this->ANDs_probabilities.insert(pair<unsigned int,float>(it_and->second.getId(),0.0));
-    
+
     cout<<"///////////Setting ANDs probabilities///////////"<<endl;
     map<unsigned int, float>::iterator it_probs;
     map<unsigned int, input>::iterator it_in;
     map<unsigned int, output>::iterator it_out;
-    
+
     int posY=0,posX=0;
     int offset=0;//mnist_obj.getAllBits().size();
     int num_imgs=mnist_obj.getAllBits().size();
@@ -1730,7 +1732,7 @@ void aigraph::setANDsProbabilities(binaryDS& mnist_obj){
         bitset<BITS_PACKAGE_SIZE> bits;
         posY=0;
         posX=0;
-        
+
 #if DEBUG>=3
         cout<<"all inputs size:"<<all_inputs.size()<<endl;
         cout<<"mnist_obj.getAllBits().size():"<<num_imgs<<endl;
@@ -1769,15 +1771,16 @@ void aigraph::setANDsProbabilities(binaryDS& mnist_obj){
         //////////////////////////////////////////////////////////////////////////////////////////
        /////////////////////////////////////DFS//////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////
-#if DEBUG >=3        
-        struct rusage buf; 
+#if DEBUG >=3
+        struct rusage buf;
         int start,stop;
         if(getrusage(RUSAGE_SELF,&buf)==-1)
             cout<<"GETRUSAGE FAILURE!"<<endl;
         start=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
 #endif
+        int8_t const mask_size = std::min<int>(BITS_PACKAGE_SIZE, num_imgs - offset);
         for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
-            it_out->second.PropagSignalDFS();
+            it_out->second.PropagSignalDFS(mask_size);
 #if DEBUG >=3
         if(getrusage(RUSAGE_SELF,&buf)==-1)
             cout<<"GETRUSAGE FAILURE!"<<endl;
@@ -1794,7 +1797,7 @@ void aigraph::setANDsProbabilities(binaryDS& mnist_obj){
         //counting 1s in each AND's bit vector
         for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++){
             repeat=0;
-            num=it_and->second.getBitVector();                        
+            num=it_and->second.getBitVector();
             if(offset>=num_imgs-(num_imgs%BITS_PACKAGE_SIZE)){
                 bitset<BITS_PACKAGE_SIZE> my_aux;
                 auxx=0;
@@ -1810,14 +1813,14 @@ void aigraph::setANDsProbabilities(binaryDS& mnist_obj){
             it_probs=ANDs_probabilities.find(it_and->second.getId());
             it_probs->second=it_probs->second+repeat;
         }
-        
+
         offset=offset+BITS_PACKAGE_SIZE;
         if(offset>num_imgs)
             offset=num_imgs;
-    }    
+    }
         map<unsigned int,float>::iterator probs_it;
         ofstream debuging,debuging2;
-        
+
 #if DEBUG >= 2
         debuging.open("ands_probs.txt");
         debuging2.open("ands_reps.txt");
@@ -1877,7 +1880,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
 //    info_file_name=this->name; info_file_name+="_"; info_file_name+=th_value; info_file_name+="_simplif_info.txt";
     ofstream dump1("dumps/dump1.txt"),dump2("dumps/dump2.txt"),dump3("dumps/dump3-renumbering.txt"),dump_probs("dumps/dump_probs.txt"),dump_PO("dumps/dump_PO.txt"),dump_hash("dumps/dump_hash.txt");
     ofstream dump_append("dumps/dump_append.txt",ios::app),removed_inputs("removed_inputs.txt");//,simpl_info(info_file_name);
-    
+
     //dump1.close();dump2.close();dump3.close();dump_probs.close();dump_PO.close();dump_hash.close();dump_append.close(); removed_inputs.close();
     map<unsigned int,float>::iterator probs_it;
     vector<int> visits;
@@ -1886,7 +1889,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
     constant1.setId(1);
     constant0.setSignal(0);
     constant0.setId(0);
-    
+
     //creating structural hash
 //    cout<<"Creating hash table for structural hash."<<endl;
 //    map <unsigned long long int,unsigned int> structural_hash;
@@ -1904,7 +1907,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
 //            bits2=(unsigned long long int)it_and->second.getInputs()[0]->getId();
 //            bits1=(unsigned long long int)it_and->second.getInputs()[1]->getId();
 //        }
-//        
+//
 //        result=(bits1 << 32) | bits2;
 //        if(it_and->second.getId()<=10000)
 //        {
@@ -1924,10 +1927,10 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
 //                it_and->second.writeNode(dump_hash);
 //            }
 //       }
-//        
+//
 //    }
-    
-    
+
+
     this->setDepthsInToOut();
     this->all_depths.push_back(0);
     for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
@@ -1946,8 +1949,8 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
 //    simpl_info<<"AIG depth:"<<this->graph_depth<<", nodes with such depth:";
 //    for(int a=0;a<this->greatest_depths_ids.size();a++)
 //        simpl_info<<greatest_depths_ids[a]<<",";
-//    simpl_info<<endl; 
-    
+//    simpl_info<<endl;
+
 #if DEBUG >= 3
     ofstream all_depths_out;
     all_depths_out.open("all_depths.txt");
@@ -1967,13 +1970,13 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
         it_and->second.setSignal(-1);
     }
     for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
-        it_out->second.setSignal(-1); 
-    
+        it_out->second.setSignal(-1);
+
     //Inputs with probability of being 0 less than threshold are set to zero
     for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
     {
 //        if(mnist_obj.getPIsProbabilities()[posY][posX]<= th_inverted)
-        if(mnist_obj.getPIsProbabilities()[posY][posX]<= 1-min_th)        
+        if(mnist_obj.getPIsProbabilities()[posY][posX]<= 1-min_th)
         {
 //            dump3<<"input:"<<it_in->second.getId()<<" probab:"<<mnist_obj.getPIsProbabilities()[posY][posX]<<" <= th:"<<th_inverted<<endl;
 //  valendo->          dump3<<"input:"<<it_in->second.getId()<<" probab:"<<mnist_obj.getPIsProbabilities()[posY][posX]<<" <= th:"<<(1-min_th)<<endl;
@@ -1990,7 +1993,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
             it_in->second.clearOutputs();
 #endif
             PI_constant++;
-        }   
+        }
         posX++;
         if(posX==posX_max)
         {
@@ -2004,7 +2007,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
   this->PIs_constant=PI_constant;
 //  simpl_info<<"Threshold:"<<th_value<<endl;
 //  simpl_info<<"# of PI that pass threshold:"<<PI_constant<<endl;
-  
+
 #if TEST == 1
   all_inputs.find(2)->second.setSignal(2);
   all_inputs.find(4)->second.setSignal(2);
@@ -2028,13 +2031,13 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
   all_inputs.find(10)->second.setSignal(2);
 #endif
 
-  
+
 #if PROBS_FROM_FILE ==1
     ANDs_probabilities.clear();
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         this->ANDs_probabilities.insert(pair<unsigned int,float>(it_and->second.getId(),0.0));
     string ands_probs_name,line;
-    
+
     ands_probs_name="../ands_probs_";
     cout<<"ands probs file name:"<<ands_probs_name<<endl;    cout<<"graph file name:"<<this->name<<endl;
     if(this->name.find("A1")!=string::npos)
@@ -2077,7 +2080,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
         dump2<<x<<","<<depth_counter[x]<<","<<endl;
     dump2<<"biggest depth:"<<biggest_depth<<endl;
 #endif
-    
+
     vector<float> new_ths(graph_depth+1,0);
     if(option>0)
     {
@@ -2126,13 +2129,13 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
         dump1<<(1-new_ths[k])<<endl;
     }
 #endif
-    
+
     int one_count=0,zero_count=0;
-    struct rusage buf; 
+    struct rusage buf;
     int start,stop;
-    AND* and_ptr; 
+    AND* and_ptr;
 //    dump_append<<endl<<endl;
-  //ANDs with probability of being 0 or 1 higher than threshold are set to constant    
+  //ANDs with probability of being 0 or 1 higher than threshold are set to constant
     for(probs_it=ANDs_probabilities.begin();probs_it!=ANDs_probabilities.end();probs_it++)
     {
         and_ptr=&all_ANDS.find(probs_it->first)->second;
@@ -2151,13 +2154,13 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
                 {
 //                    and_ptr->getOutputs()[j];
                     if(and_ptr->getOutputs()[j]->getInputs()[0]->getId()==and_ptr->getId())
-                       and_ptr->getOutputs()[j]->replaceInput(0,&constant0,and_ptr->getOutputs()[j]->getInputPolarities()[0]); 
+                       and_ptr->getOutputs()[j]->replaceInput(0,&constant0,and_ptr->getOutputs()[j]->getInputPolarities()[0]);
                     else if (and_ptr->getOutputs()[j]->getInputs()[1]->getId()==and_ptr->getId())
                         and_ptr->getOutputs()[j]->replaceInput(1,&constant0,and_ptr->getOutputs()[j]->getInputPolarities()[1]);
                 }
             }
            zero_count++;
-        }        
+        }
         if(probs_it->second >= new_ths[this->all_depths[probs_it->first/2]])
         {
 //            if(probs_it->first<=12800)
@@ -2167,16 +2170,16 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
             dump2<<",depth:"<<all_depths[probs_it->first/2]<<endl;
 //            dump_probs<<"1->probes_it->first:"<<probs_it->first<<",probs_it->second:"<<probs_it->second<<endl;
 #endif
-            
+
             if(all_outputs.find(probs_it->first)==all_outputs.end())
             {
                 for(int j=0;j<and_ptr->getOutputs().size();j++)
                 {
                     and_ptr->getOutputs()[j];
                     if(and_ptr->getOutputs()[j]->getInputs()[0]->getId()==and_ptr->getId())
-                       and_ptr->getOutputs()[j]->replaceInput(0,&constant1,and_ptr->getOutputs()[j]->getInputPolarities()[0]); 
+                       and_ptr->getOutputs()[j]->replaceInput(0,&constant1,and_ptr->getOutputs()[j]->getInputPolarities()[0]);
                     else if (and_ptr->getOutputs()[j]->getInputs()[1]->getId()==and_ptr->getId())
-                        and_ptr->getOutputs()[j]->replaceInput(1,&constant1,and_ptr->getOutputs()[j]->getInputPolarities()[1]); 
+                        and_ptr->getOutputs()[j]->replaceInput(1,&constant1,and_ptr->getOutputs()[j]->getInputPolarities()[1]);
                 }
             }
         one_count++;
@@ -2190,7 +2193,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
 //  simpl_info<<"# of ANDs to be constant 0:"<<zero_count<<endl;
 //  for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
 //      dump1<<it_and->second.getId()<<":"<<it_and->second.getSignal()<<endl;
-  
+
     stack<nodeAig*>stackzin;
     vector<nodeAig*> AUX;
     nodeAig* current;
@@ -2212,16 +2215,16 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
         //if PO's input is not a PI, push back on stack
         if(all_inputs.find(it_out->second.getInput()->getId())==all_inputs.end())
             stackzin.push(it_out->second.getInput());
-        
+
         //-1 means not visited
         //2 means not a constant
         while(!stackzin.empty())
-        {            
+        {
             current=stackzin.top();
             if(visits[current->getInputs()[0]->getId()/2]==-1)
                 stackzin.push(current->getInputs()[0]);
             else if(visits[current->getInputs()[1]->getId()/2]==-1)
-                stackzin.push(current->getInputs()[1]);            
+                stackzin.push(current->getInputs()[1]);
             else if(visits[current->getInputs()[1]->getId()/2]>-1 && visits[current->getInputs()[0]->getId()/2]>-1)
             {
                 if(current->getSignal()==-1)
@@ -2428,7 +2431,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
                             //treating if current to be removed is a PO
                             if(all_outputs.find(current->getId())!=all_outputs.end())
                             {
-#if DEBUG >= 3                      
+#if DEBUG >= 3
                                 dump_PO<<"Renumbering output:"<<current->getId()<<" with:"<<new_node->getId()<<endl;
 #endif
                                 all_outputs.find(current->getId())->second.setId(new_node->getId());
@@ -2446,15 +2449,15 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
         }
         if(it_out->second.getId()>1)
             it_out->second.setSignal(it_out->second.getInput()->getSignal());
-        
+
         if(it_out->second.getSignal()!=2)
         {
             cout<<"WARNING: output "<<it_out->second.getId()<<" has signal after constant propagation:"<<it_out->second.getSignal()<<endl;
             dump_PO.open("dump_PO",ios::app); dump_PO<<"WARNING: output "<<it_out->second.getId()<<" has signal after constant propagation:"<<it_out->second.getSignal()<<endl; dump_PO.close();
         }
     }
-    cout<<"Signal propagation doneeeeeeeeeeeeeeee."<<endl; 
-    
+    cout<<"Signal propagation doneeeeeeeeeeeeeeee."<<endl;
+
     //making sure outputs wont be deleted, by adding themselfs to their fanout list
     cout<<"Making sure outputs wont be deleted, by adding themselfs to their fanout list"<<endl;
     for(it_out=this->all_outputs.begin();it_out!=all_outputs.end();it_out++)
@@ -2462,7 +2465,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
         if(it_out->second.getId()>1)
             it_out->second.getInput()->pushOutput(it_out->second.getInput());
     }
-    
+
     //Setting ANDs that wasn't reached in the DFS to be removed.
     cout<<"Setting ANDs that wasn't reached in the DFS to be removed."<<endl;
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
@@ -2483,7 +2486,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
 #if DEBUG >= 3
     dump1<<"graph depth:"<<this->graph_depth<<endl;
     dump1<<"removed_nodes_counter_by_depth size:"<<removed_nodes_counter_by_depth.size()<<endl;
-#endif    
+#endif
     it_and=all_ANDS.begin();
     while(it_and!=all_ANDS.end())
     {
@@ -2491,19 +2494,19 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
         if(it_and->second.getOutputs().size()==0) //&& all_outputs.find(it_and->first)==all_outputs.end())
         {
 #if DEBUG >= 1
-            ofstream write2("removed_ANDs.txt"); 
+            ofstream write2("removed_ANDs.txt");
             write2<<it_and->first<<",";
             dump1<<"AND:"<<it_and->second.getId()<<", depth:"<<this->all_depths[it_and->second.getId()/2]<<", depth counter:"<<removed_nodes_counter_by_depth[this->all_depths[it_and->second.getId()/2]]<<endl;
 #endif
-            
+
             removed_nodes_counter_by_depth[this->all_depths[it_and->second.getId()/2]]++;
             it_and=all_ANDS.erase(it_and);
             ands_removed++;
         }
         else
             it_and++;
-    }   
-    
+    }
+
     it_in=all_inputs.begin();
     //COUNTING inputs with 0 fanouts
     cout<<"COUNTING inputs with 0 fanouts"<<endl;
@@ -2528,7 +2531,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
             it_in++;
     }
 #endif
-    
+
 #if DEBUG >= 1
     int sum=0;
     for(int t=0;t<removed_nodes_counter_by_depth.size();t++)
@@ -2543,7 +2546,7 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
     nodes_per_level<<endl;
     nodes_per_level.close();
 #endif
-    
+
     this->setDepthsInToOut();
 //    cout<<"ANDs removed:"<<ands_removed<<endl;
 //    cout<<"Inputs removed:"<<PIs_removed<<endl;
@@ -2551,14 +2554,14 @@ void aigraph::propagateAndDeleteAll(binaryDS& mnist_obj,int option,float min_th,
 //    simpl_info<<"Inputs removed:"<<PIs_removed<<endl;
 //    simpl_info<<"all_ands.size():"<<all_ANDS.size()<<endl;
 //    simpl_info<<"new depth:"<<this->graph_depth<<endl;
-    
+
 //    if(mnist_obj.getAllBits().size()==60000 && this->name.find("train")==string::npos)
 //        this->name+="_train";
 //    else if (mnist_obj.getAllBits().size()==10000 && this->name.find("test")==string::npos)
 //        this->name+="_test";
 //    else
 //        cout<<"mnist size unknown"<<endl;
-    
+
     ofstream csv_final;
     csv_final.open("todos_scores.csv",ios::app);
 //    simpl_info<<endl<<th_value<<","<<PI_constant<<","<<PIs_removed<<","<<one_count<<","<<zero_count<<",,"<<ands_removed<<","<<all_ANDS.size()<<",,"<<graph_depth<<",,"<<endl;
@@ -2581,7 +2584,7 @@ csv_final.close();
 #endif
        it_in->second.setId(id*2);
    }
-   
+
 #if DEBUG >= 3
    dump3<<endl<<endl<<"Renumbering ANDS:"<<endl;
 #endif
@@ -2593,7 +2596,7 @@ csv_final.close();
 #endif
        it_and->second.setId(id*2);
    }
-   
+
 #if DEBUG >= 3
    dump3<<endl<<endl;
 #endif
@@ -2616,7 +2619,7 @@ csv_final.close();
 #endif
 }
 //#endif
-    
+
     //Reordering AND's inputs (bigger first)
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         it_and->second.invertInputs();
@@ -2650,7 +2653,7 @@ void aigraph::recursiveRemoveOutput(unsigned int id_to_remove, nodeAig* remove_f
             break;
         }
     }
-    
+
 //    if(all_inputs.find(remove_from->getId())==all_inputs.end())
     if(remove_from->getId()>(all_inputs.size()*2))
     {
@@ -2671,7 +2674,7 @@ void aigraph::setDepthsInToOut(){
     map<unsigned int,AND>::iterator it_and;
     map<unsigned int,input>::iterator it_in;
     ofstream write;
-    
+
     //Initializing depths
     for(it_in=all_inputs.begin();it_in!=all_inputs.end();it_in++)
         it_in->second.setDepth(-1);
@@ -2701,7 +2704,7 @@ void aigraph::setDepthsInToOut(){
             greatest_depths_ids.push_back(it_out->second.getId());
     }
     this->graph_depth=greater;
-    
+
 #if DEBUG >= 3
     write.open("dumps/Depths.txt");
     write<<this->name<<","<<greater<<endl;
@@ -2726,15 +2729,15 @@ void aigraph::setShortestDistanceToPO(){
         it_and->second.setDepth(-1);
     for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
         it_out->second.setDepth(-1);
-    
+
     //THIS IS REQUIRED TO WORK PROPERLY
 //    for(it_out=all_outputs.begin();it_out!=all_outputs.end();it_out++)
 //    {
 //        it_out->second.computeDepthOutToIn(0);
 //    }
-    
-    
-    
+
+
+
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         cout<<it_and->second.getId()<<":"<<it_and->second.getDepth()<<endl;
     int greater=-1;
@@ -2752,7 +2755,7 @@ void aigraph::setShortestDistanceToPO(){
     }
     this->graph_depth=greater;
     cout<<"graph depth:"<<this->graph_depth<<endl;
-    
+
     write.open("dumps/Depths.txt");
     write<<this->name<<","<<greater<<endl;
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
@@ -2764,17 +2767,17 @@ void aigraph::printDepths(){
     map<unsigned int, AND>::iterator it;
     map<unsigned int, input>::iterator it2;
     map<unsigned int, output>::iterator it3;
-    
+
     cout<<"Inputs' depths:"<<endl;
     for(it2=all_inputs.begin();it2!=all_inputs.end();it2++)
         cout<<it2->second.getId()<<":"<<it2->second.getDepth()<<endl;
     cout<<endl;
-    
+
     cout<<"Outputs' depths:"<<endl;
     for(it3=all_outputs.begin();it3!=all_outputs.end();it3++)
         cout<<it3->second.getId()<<":"<<it3->second.getDepth()<<endl;
     cout<<endl;
-                
+
     cout<<"ANDs' depths:"<<endl;
     for(it=all_ANDS.begin();it!=all_ANDS.end();it++)
         cout<<it->second.getId()<<":"<<it->second.getDepth()<<"|";//<<endl;
@@ -2790,7 +2793,7 @@ void aigraph::writeProbsHistogram(){
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         this->ANDs_probabilities.insert(pair<unsigned int,float>(it_and->second.getId(),0.0));
     string ands_probs_name,line;
-    
+
     ands_probs_name="../ands_probs_";
     if(this->name.find("A1")!=string::npos)
         ands_probs_name+="A1.txt";
@@ -2803,7 +2806,7 @@ void aigraph::writeProbsHistogram(){
     else
         cout<<"ERROR, graph name has no A1-4"<<endl;
     ifstream in_file (ands_probs_name);
-    
+
     it_and=all_ANDS.begin();
     vector<int> probs_concentration (12,0);
     for(probs_it=ANDs_probabilities.begin();probs_it!=ANDs_probabilities.end();probs_it++)
@@ -2836,7 +2839,7 @@ void aigraph::writeProbsHistogram(){
         if(probs_it->second==1)
             probs_concentration[11]++;
     }
-    
+
     string file_name="Prob(1)_histogram_";
     file_name+=this->name;
     file_name+=".csv";
@@ -2848,12 +2851,12 @@ void aigraph::writeProbsHistogram(){
         total+=probs_concentration[a];
     write<<"total sum:"<<total<<",all_ands size:"<<this->all_ANDS.size()<<endl;
     write.close();
-    
+
     this->setDepthsInToOut();
     vector<int> depth_counter (this->graph_depth,0);
     for(it_and=all_ANDS.begin();it_and!=all_ANDS.end();it_and++)
         depth_counter[it_and->second.getDepth()]++;
-    
+
     file_name="Depth_histogram_";
     file_name+=this->name;
     file_name+=".csv";
@@ -2902,7 +2905,7 @@ void aigraph::evaluateScorseAbcCommLine21(int ds_start,int ds_end){
                 #if COUT >= 1
                 cout<<"Using reduced TRAIN SET (without mini test)! path:"<<cifar_full_name<<endl;
                 #endif
-                
+
             }
 #endif
 //            cout<<"full name:"<<full_name<<endl;
@@ -2945,13 +2948,13 @@ void aigraph::evaluateScorseAbcCommLine21(int ds_start,int ds_end){
             this->train_score=correct_count/(10000);
             #endif
 #endif
-        
+
 //#if COUT >=1
         cout<<"Evaluation with ABC, test score "<<this->test_score<<", train score"<<this->train_score<<", size:"<<this->size<<endl;
 //#endif
     }
 }
-    
+
 float aigraph::getTestScore(){
     return this->test_score;
 }

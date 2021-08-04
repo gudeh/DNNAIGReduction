@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
         {posY_max=28; posX_max=224;}
     else
         {posY_max=32*3; posX_max=32*8;}//3*8*32;
-    
+
     struct rusage buf;
     int start,stop,start_simplf,stop_simplf,start_app,stop_app,iterations=0;
     if(getrusage(RUSAGE_SELF,&buf)==-1)
@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     start=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
     string file_name,old_name,abc_name;
 #if TEST == 0
-//    file_name="A1.aig";;
+   file_name="../A14/A1.aig";;
 //    file_name="exemploBrunno.aig";
 //    file_name="inputAigsV2/out_forest_numTrees_75_maxDepth_13_bitsPrecision_5_nosynth.aig";
 #elif TEST == 1
@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     float min_th=0.9999;
 //    option=RUN_OPTION;
     cout<<"Setting option to:"<<option<<endl;
-          
+
     //-1->OnlyPI, 0->AllNodes 1->FB-LD linear, 2->FB-LD root, 3->FB-LD exp, 4->FB-NPD linear, 5->FB-NPD root, 6->FB-NPD exp
 #if APPLY_MNIST == 1
     exec_times<<"Otption:"<<option<<", Circuit:"<<file_name<<endl<<"Min_th, Set Constants, Train Set ABC, Test Set ABC, My Simplification, Train Set, Test Set"<<endl;
@@ -50,12 +50,28 @@ int main(int argc, char** argv) {
     results.close();
 
     mnist_obj.clearMnist();
-    read_mnist.open("mnist/train-images.idx3-ubyte",ifstream::binary);
-    mnist_obj.readIdx(read_mnist,"mnist/train-images.idx3-ubyte");
+    read_mnist.open("../mnist/train-images.idx3-ubyte",ifstream::binary);
+    mnist_obj.readIdx(read_mnist,"../mnist/train-images.idx3-ubyte");
     mnist_obj.setPIsBitsProbabilities(read_mnist);
+    graph_obj.readAIG(read_aig,file_name);
+    graph_obj.setANDsProbabilities(mnist_obj);
     read_mnist.close();
-    
-        
+
+    {
+        std::ofstream out_marco("out_marco.txt");
+
+        for (auto const& [ idx, and_gate ] : graph_obj.all_ANDS) {
+            out_marco << idx << ' ' <<
+                and_gate.input_combinations[0] << ' ' <<
+                and_gate.input_combinations[1] << ' ' <<
+                and_gate.input_combinations[2] << ' ' <<
+                and_gate.input_combinations[3] << std::endl;
+        }
+    }
+
+    return 0;
+
+
     vector<string> exemplars;
     string input_file="../lastDay/";
 //    string input_file="../inputFromCgp-abcFix/";
@@ -77,7 +93,7 @@ int main(int argc, char** argv) {
     for(int s=exemplars.size()-1;s>=0;s--){
         file_name=exemplars[s];
         graph_obj.clearAndsProbabilities();
-        graph_obj.clearCircuit(); read_aig.close(); read_aig.open(file_name.c_str(),ifstream::binary);  
+        graph_obj.clearCircuit(); read_aig.close(); read_aig.open(file_name.c_str(),ifstream::binary);
         graph_obj.readAIG(read_aig,file_name);
         graph_obj.setANDsProbabilities(mnist_obj);
         for(option=0;option<=6;option++){
@@ -100,9 +116,9 @@ int main(int argc, char** argv) {
 
                 //clearCircuit won't remove the ANDs probability values
                 graph_obj.clearCircuit(); read_aig.close(); read_aig.open(file_name.c_str(),ifstream::binary);
-                graph_obj.setThrehsold(min_th);        
+                graph_obj.setThrehsold(min_th);
                 graph_obj.readAIG(read_aig,file_name);
-                
+
                 cout<<"Starting evaluation! Method:"<<method_name<<endl;
                 graph_obj.evaluateScorseAbcCommLine21(0,3);
                 boots_train_acc=graph_obj.getTrainScore();
@@ -110,8 +126,8 @@ int main(int argc, char** argv) {
                 boots_test_acc=graph_obj.getTestScore();
                 boots_size=graph_obj.getSize();
                 cout<<"-----------SCORE BEFORE:"<<graph_obj.getTestScore()<<endl;
-                
-                LEAVE_CONSTANTS=1;  
+
+                LEAVE_CONSTANTS=1;
                 getrusage(RUSAGE_SELF,&buf); start_simplf=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
                     graph_obj.propagateAndDeleteAll(mnist_obj,option,min_th,alpha,LEAVE_CONSTANTS);
                 getrusage(RUSAGE_SELF,&buf); stop_simplf=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
@@ -141,8 +157,8 @@ int main(int argc, char** argv) {
                         +"NewTest"+to_string(graph_obj.getTestScore())
                         +"NewSize"+to_string(graph_obj.getSize())
                         +".aig";
-                
-                abcWrite(old_name,abc_name);  
+
+                abcWrite(old_name,abc_name);
                 results.open("results.csv",ios::app);
                 results<<graph_obj.getName()<<","
                         <<method_name<<","
@@ -160,7 +176,7 @@ int main(int argc, char** argv) {
                         <<(graph_obj.getSize())<<","
                         <<abc_name<<endl;
                 results.close();
-                
+
 //                for(float opi_th=0.51;opi_th<=0.515;opi_th+=0.00025){
 //                    cout<<"//////////////////////////////////////////////////////////////////////////////////////////////////"<<endl;
 //                    cout<<"///////////////////////Running OPI Method on top of last resulting AIG.///////////////////////////"<<endl;
@@ -173,7 +189,7 @@ int main(int argc, char** argv) {
 //                    boots_size=graph_obj.getSize();
 //                    cout<<"-----------SCORE BEFORE OPI:"<<graph_obj.getTestScore()<<endl;
 //
-//                    LEAVE_CONSTANTS=1;  
+//                    LEAVE_CONSTANTS=1;
 //                    getrusage(RUSAGE_SELF,&buf); start_simplf=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
 //                        graph_obj.propagateAndDeletePIBased(mnist_obj,opi_th,LEAVE_CONSTANTS);
 //                    getrusage(RUSAGE_SELF,&buf); stop_simplf=buf.ru_stime.tv_sec+buf.ru_utime.tv_sec;
@@ -192,7 +208,7 @@ int main(int argc, char** argv) {
 //                            +"OpiSize"+to_string(graph_obj.getSize())
 //                            +".aig";
 //                    old_name=graph_obj.getName();
-//                    abcWrite(old_name,abc_name);  
+//                    abcWrite(old_name,abc_name);
 //                    results.open("results.csv",ios::app);
 //                    results<<graph_obj.getName()<<","
 //                            <<"OPI"<<","
@@ -211,10 +227,10 @@ int main(int argc, char** argv) {
 //                            <<abc_name<<endl;
 //                    results.close();
 //                }
-                
+
     //
     //            graph_obj.clearCircuit(); read_aig.close(); read_aig.open(abc_name.c_str(),ifstream::binary);
-    //            graph_obj.setThrehsold(min_th);        
+    //            graph_obj.setThrehsold(min_th);
     //            graph_obj.readAIG(read_aig,abc_name); graph_obj.setDepthsInToOut();
     //            abc_info<<graph_obj.getName()<<","<<min_th<<",option:"<<option<<","<<graph_obj.getDepth()<<","<<graph_obj.getANDS()->size()<<endl;
             }
@@ -248,9 +264,9 @@ struct aig_info{
         string file_name=exemplars[s];
         ifstream read_aig;
         aig_info my_info;
-        
+
         cout<<s<<endl;
-        graph_obj.clearCircuit(); read_aig.close(); read_aig.open(file_name.c_str(),ifstream::binary);  
+        graph_obj.clearCircuit(); read_aig.close(); read_aig.open(file_name.c_str(),ifstream::binary);
         graph_obj.readAIG(read_aig,file_name);
         my_info.name=graph_obj.getName();
         graph_obj.evaluateScorseAbcCommLine21(0,3);
@@ -281,13 +297,9 @@ struct aig_info{
         medium_res<<medium[i].name<<","<<medium[i].train<<","<<medium[i].test<<","<<medium[i].size<<endl;
     for(int i=0;i<large.size();i++)
         large_res<<large[i].name<<","<<large[i].train<<","<<large[i].test<<","<<large[i].size<<endl;
-    
-    
+
+
     return 0;
 }
-    
+
 #endif
-    
-
-
-

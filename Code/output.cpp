@@ -37,7 +37,7 @@ void output::writeNode(ofstream& write){
     int depth;
 //    ofstream write;
 //    write.open("log.txt",ios::app);
-    
+
     write<<"Output: "<<this->id+this->getInputPolarity()<<". Input:"<<this->getInput()->getId()<<endl;
 }
 
@@ -59,28 +59,28 @@ int output::computeDepthInToOut(){
 
 //unsigned int output::enumerateDFS(unsigned int param_index) {
 //    this->id=param_index*2;
-//    
+//
 //    return this->getInput()->enumerateDFS(param_index);
 //}
 
 //unsigned int output::enumerateBFS(unsigned int param_index) {
 //    this->id=param_index*2;
-//    
+//
 //    return this->getInput()->enumerateBFS(param_index);
 //}
-        
+
 
 void output::printNode(){
     cout<<"PO:"<<this->id<<". Input:";
         cout<<this->input->fixLSB()->getId()+(int)getThisPtrPolarity(input)<<",";
     cout<<endl;
 }
-        
-unsigned long long int output::PropagSignalDFS(){
+
+unsigned long long int output::PropagSignalDFS(int mask_size){
 //    cout<<"OUT "<<this->id<<"-";
     if(this->signal==-1)
-        this->bit_vector=this->input->fixLSB()->PropagSignalDFS();
-        
+        this->bit_vector=this->input->fixLSB()->PropagSignalDFS(mask_size);
+
     return this->signal;
 }
 

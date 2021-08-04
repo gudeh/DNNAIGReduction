@@ -4,10 +4,10 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   input.cpp
  * Author: augusto
- * 
+ *
  * Created on 23 de Março de 2018, 17:38
  */
 
@@ -58,7 +58,7 @@ void input::writeNode(ofstream& write){
     int depth;
 //    ofstream write;
 //    write.open("log.txt",ios::app);
-    
+
     write<<"Input: "<<this->id<<" .Outputs("<<this->outputs.size()<<"):";
     for(int i=0;i<this->outputs.size();i++)
         write<<this->outputs[i]->getId()<<",";
@@ -81,7 +81,7 @@ void input::writeNode(ofstream& write){
 
 
 
-unsigned long long int input::PropagSignalDFS(){
+unsigned long long int input::PropagSignalDFS(int mask_size){
 //    cout<<"END "<< this->id <<"-";
     return this->bit_vector;
 }
@@ -116,12 +116,12 @@ void input::removeOutput(unsigned int id_to_remove) {
 //            break;
 //        }
 //    }
-//    
+//
 //}
 
 void input::printNode(){
     cout<<"Input:"<<this->id<<". Outputs:";
-    
+
     for(int i=0;i<this->outputs.size();i++)
         cout<<this->outputs[i]->getId()<<",";
     cout<<endl;

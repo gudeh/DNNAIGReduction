@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   AIG.h
  * Author: augusto
  *
@@ -38,10 +38,10 @@
 #define WRITE_AIG 0
 #define WRITE_AAG 0
 #define WRITE_ORIGINAL_DEPTHS 0
-#define MNIST_DS 0
-#define cifarv2 1
+#define MNIST_DS 1
+#define cifarv2 0
 #define local_test_run 0
-#define final_check 1
+#define final_check 0
 
 
 //#define posY_max 28
@@ -77,8 +77,8 @@ extern int posX_max;
 
 //#include <filesystem> //requires c++17
 //namespace fs = std::filesystem;
-#include <experimental/filesystem> //requires c++17
-namespace fs = std::experimental::filesystem;
+#include <filesystem> //requires c++17
+namespace fs = std::filesystem;
 
 //#include "include/alice/alice.hpp"
 using namespace std;
@@ -92,17 +92,17 @@ using namespace std;
 
 
 class nodeAig{
-    
+
 protected:
     unsigned int id;
     int signal;
     unsigned long long int bit_vector;
-    
+
 public:
     nodeAig();
     nodeAig(unsigned int);
     virtual ~nodeAig();
-    
+
     //modifiers
     virtual void pushOutput(nodeAig* param){}
     virtual void pushInput(nodeAig* param,bool param_polarity){}
@@ -110,34 +110,34 @@ public:
     void setDepth(int);
     void setSignal(int);
     void setBitVector(unsigned long long int);
-    
+
     //member access
     unsigned int getId();
     int getDepth();
     int getSignal();
     unsigned long long int getBitVector();
-    nodeAig* fixLSB();    
+    nodeAig* fixLSB();
     nodeAig* forceInvert();
     virtual vector<nodeAig*> getInputs(){}
     virtual vector<nodeAig*> getOutputs(){}
     virtual vector<int> getInputPolarities(){}
-    
-    
+
+
     //operations
     virtual int computeDepthInToOut(){}
 //    virtual void computeDepthOutToIn(int previous_signal){}
 //    virtual unsigned int enumerateDFS(unsigned int index){} //TODO: this is not used anymore
-    virtual unsigned long long int PropagSignalDFS(){}
+    virtual unsigned long long int PropagSignalDFS(int mask_size){}
     //swap_index is the index from the input that will be replaced.
     virtual void replaceInput(int swap_index,nodeAig* new_node,bool polarity){}
 //    virtual void removeOutput(node*){}
     virtual void removeOutput(unsigned int){}
 //    virtual void recursiveRemoveOutput(unsigned int){}
     virtual void clearOutputs(){}
-    
+
 //    virtual void writeNode(){}
     virtual void writeNode(ofstream&){}
-    
+
     virtual void printNode(){}
 };
 
@@ -150,7 +150,7 @@ public:
 
 class input: public nodeAig {
     vector<nodeAig*> outputs;
-    
+
 public:
     input();
     using nodeAig::nodeAig; //enable use of constructor from node
@@ -159,31 +159,31 @@ public:
     using nodeAig::getId;
     using nodeAig::getSignal;
    virtual ~input();
-   
+
    //modifiers
    void pushOutput(nodeAig* param) override;
-   
+
    //operations
    int computeDepthInToOut() override;
 //   void computeDepthOutToIn(int previous_signal) override;
 //   unsigned int enumerateDFS(unsigned int index) override;
-   unsigned long long int  PropagSignalDFS() override;
+   unsigned long long int  PropagSignalDFS(int mask_size) override;
 //   void removeOutput(node* node_to_remove) override;
    void removeOutput(unsigned int id_to_remove) override;
 //   void recursiveRemoveOutput(unsigned int id_to_remove) override;
    void clearOutputs() override;
-   
-   
-   
+
+
+
 //   void writeNode() override;
    void writeNode(ofstream&) override;
    void printNode() override;
    //member access
    vector<nodeAig*> getOutputs() override;
 //   vector<bool> getInputPolarities() override;
-   
 
-   
+
+
 };
 
 
@@ -201,26 +201,26 @@ public:
     latch();
     using nodeAig::nodeAig; //enable use of constructor from node
     virtual ~latch();
-    
+
     //member access
     using nodeAig::getDepth;
     using nodeAig::getId;
     using nodeAig::getSignal;
 //    int getInputPolarity();
     nodeAig* getInput();
-    
+
     //modifiers
     using nodeAig::setDepth;
-    void pushInput(nodeAig* param,bool param_polarity) override; 
+    void pushInput(nodeAig* param,bool param_polarity) override;
     void pushOutput(nodeAig* param) override;
 
-    //operations    
+    //operations
     int computeDepthInToOut() override;
 //    void computeDepthOutToIn(int previous_signal) override;
 //    unsigned int enumerateDFS(unsigned int index) override;
 //    unsigned int enumerateBFS(unsigned int index) override;
 //    void writeNode() override;
-    
+
 };
 
 
@@ -232,7 +232,7 @@ public:
 
 class output : public nodeAig{
     nodeAig* input;
-    
+
 public:
     output();
     using nodeAig::nodeAig; //enable use of constructor from node
@@ -240,15 +240,15 @@ public:
     using nodeAig::setDepth;
     using nodeAig::getDepth;
     using nodeAig::getSignal;
-    
+
     //modifiers
     void pushInput(nodeAig* param,bool param_polarity);
     void clearInput();
-            
+
     //member access
     nodeAig* getInput();
     int getInputPolarity();
-    
+
     //operations
 //    void writeNode() override;
     void writeNode(ofstream&) override;
@@ -256,7 +256,7 @@ public:
 //    void computeDepthOutToIn(int previous_signal) override;
 //    unsigned int enumerateDFS(unsigned int param_index) override;
     void printNode() override;
-    unsigned long long int PropagSignalDFS() override;
+    unsigned long long int PropagSignalDFS(int mask_size) override;
 
 };
 
@@ -267,35 +267,37 @@ class AND : public nodeAig{
 #if IGNORE_OUTPUTS == 0
     vector <nodeAig*> outputs;
 #endif
-    
+
 public:
+    std::array<int64_t, 4> input_combinations = {0, 0, 0, 0};
+
     AND();
-    using nodeAig::nodeAig; 
+    using nodeAig::nodeAig;
     using nodeAig::setDepth;
     using nodeAig::getDepth;
     using nodeAig::getSignal;
     virtual ~AND();
-    
+
     //member access
-   vector<nodeAig*> getInputs() override; 
+   vector<nodeAig*> getInputs() override;
 #if IGNORE_OUTPUTS == 0
        vector<nodeAig*> getOutputs() override;
 #endif
 
    vector<int> getInputPolarities() override;
-   
+
    //modifiers
-   
+
    void pushInput(nodeAig* param,bool param_polarity) override;
    void replaceInput(int swap_index,nodeAig* new_node,bool polarity) override;
    void invertInputs();
-   
+
    //operations
    int computeDepthInToOut() override;
 //   void computeDepthOutToIn(int previous_signal) override;
 //   unsigned int enumerateDFS(unsigned int index) override;
-   unsigned long long int PropagSignalDFS() override;
-   
+   unsigned long long int PropagSignalDFS(int mask_size) override;
+
 #if IGNORE_OUTPUTS == 0
 //   void removeOutput(node* node_to_remove) override;
    void removeOutput(unsigned int id_to_remove) override;
@@ -303,8 +305,8 @@ public:
    void clearOutputs() override;
    void pushOutput(nodeAig* param) override;
 #endif
-   
-   
+
+
 //   void writeNode() override;
    void writeNode(ofstream&) override;
    void printNode() override;
@@ -321,7 +323,6 @@ protected:
     map<unsigned int,input> all_inputs;
     map<unsigned int,latch> all_latches;
     map<unsigned int,output> all_outputs;
-    map<unsigned int,AND> all_ANDS;
     string name;
     //Vector to store the probability of all ANDs
     map <unsigned int,float> ANDs_probabilities;
@@ -333,18 +334,19 @@ protected:
     int graph_depth;
     vector<unsigned int> greatest_depths_ids;
     nodeAig constant1,constant0;
-    
+
     ofstream log;
-    
+
     int ANDs_constant,ANDs_removed,PIs_constant,PIs_removed;
     int size;
     float test_score,train_score;
-    
+
 public:
+    map<unsigned int,AND> all_ANDS;
     aigraph();
    virtual ~aigraph();
-    
-    
+
+
     //modifiers
     void readAAG(ifstream&,string);
     void readAIG(ifstream&,string);
@@ -357,7 +359,7 @@ public:
     void pushPO(unsigned int index,output output_obj);
     AND* pushAnd(unsigned int index,AND AND_obj);
     void recursiveRemoveOutput(unsigned int id_to_remove,nodeAig* remove_from);
-    
+
     //member access
     input* findInput(unsigned int);
     latch* findLatch(unsigned int);
@@ -375,7 +377,7 @@ public:
     int getSize();
     int getPiConstantsSize();
     int getAndsConstantsSize();
-    
+
     //operations
     void setDepthsInToOut();
     void setShortestDistanceToPO();
@@ -390,22 +392,22 @@ public:
     void propagateAndDeleteAll(binaryDS&,int option,float min_th,int alpha, int LEAVE_CONSTANTS);
 //    void writeFileWithConstantNodes();
     void evaluateScorseAbcCommLine21(int ds_start,int ds_end);
-    
-    
+
+
     void assignBits(binaryDS&);
-    
-    
+
+
     //debugging
     void printCircuit();
     void printDepths();
     void writeCircuitDebug();
-    
+
 private:
     void encodeToFile(ofstream& file, unsigned x);
     unsigned char getnoneofch (ifstream& file,int);
     unsigned decode (ifstream& file,int);
-    
-    
+
+
 };
 
 
@@ -414,29 +416,29 @@ private:
 class synthesizer : public aigraph{
     deque<nodeAig*> circ_deque;
     unsigned int M,I,L,O,A,AND_index;
-    
+
 private:
     void connectNodes(nodeAig* in, nodeAig* destination, bool invert);
     deque<nodeAig*> buildCellDeque(int num_inputs,bool input_inverted);
-    
+
     void addAND(int num_inputs,bool balance);
     void addNAND(int num_inputs,bool balance);
     void addOR(int num_inputs,bool balance);
     void addNOR(int num_inputs,bool balance);
     void addXNOR(int num_inputs,bool balance);
     void addXOR(int num_inputs,bool balance);
-    
+
     void enumerateGraph(int enumeration);
     void clearIDs();
-    
+
     int parseLine(char*);
     int getValue();
-    
+
 public:
     synthesizer();
     ~synthesizer();
-    
-    
+
+
     //modifiers
     void create(int num_PI,int function,bool balance,int enumeration);
 };
@@ -462,4 +464,3 @@ void abcWrite(string old_name,string abc_name);
 void abcCeC(string new_name,string abc_name,float min_th,int option);
 
 #endif /* GDE_H */
-
