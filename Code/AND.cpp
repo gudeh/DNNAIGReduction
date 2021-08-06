@@ -183,14 +183,13 @@ unsigned long long int AND::PropagSignalDFS(int mask_size){
         if(getInputPolarities()[1])
             sig_rhs1=~sig_rhs1;
 
-        this->bit_vector= sig_rhs0 & sig_rhs1;
-
         if (mask_size < BITS_PACKAGE_SIZE) {
             uint64_t const mask = (uint64_t(1) << mask_size) - 1;
             sig_rhs0 &= mask;
             sig_rhs1 &= mask;
         }
 
+        this->bit_vector= sig_rhs0 & sig_rhs1;
         int64_t zero_zero = __builtin_popcountll((~sig_rhs0) & (~sig_rhs1));
 
         if (mask_size < BITS_PACKAGE_SIZE) {
